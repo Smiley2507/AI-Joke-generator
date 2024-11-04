@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joke Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet"/>
+<body>
+    <div class="container">
+        <h1 class="heading1">Jokes Generator</h1>        
+        <button class="theme-toggle" onclick="toggleTheme()">
+            <i class="fas fa-moon"></i>
+        </button>
+
+        <div class="joke-container fade-in">
+            <p id="joke-text" class="joke-text">{{ joke }}</p>
+            
+            <div class="button-container">
+                <button class="btn" onclick="generateNewJoke()">
+                    <i class="ri-refresh-line"></i> New Joke
+                </button>
+                
+                <button class="icon-button" onclick="likeJoke()">
+                    <i class="ri-heart-line"></i>                
+                </button>
+                
+                <button class="icon-button" onclick="copyJoke()">
+                    <i class="ri-file-copy-line"></i>                
+                </button>
+                
+                <button class="icon-button" onclick="shareJoke()">
+                    <i class="ri-share-2-line"></i>                
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Audio elements for laugh sounds
+        const laughSounds = {
+            'giggle1.mp3': new Audio("{{ url_for('static', filename='sounds/giggle1.mp3') }}"),
+            'laugh1.mp3': new Audio("{{ url_for('static', filename='sounds/laugh1.mp3') }}"),
+            'giggle2.mp3': new Audio("{{ url_for('static', filename='sounds/giggle2.mp3') }}"),
+            'laugh2.mp3': new Audio("{{ url_for('static', filename='sounds/laugh2.mp3') }}")
+        };
+
+        async function generateNewJoke() {
+            try {
+                const response = await fetch('/get-joke', {
+                    method: 'POST',
+                });
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    document.getElementById('joke-text').textContent = data.joke;
+                    document.querySelector('.joke-container').classList.remove('fade-in');
+                    void document.querySelector('.joke-container').offsetWidth;
+                    document.querySelector('.joke-container').classList.add('fade-in');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function likeJoke() {
+            try {
+                const response = await fetch('/like-joke', {
+                    method: 'POST',
+                });
+                const data = await response.json();
+                
+                if (data.status === 'success' && data.sound) {
+                    laughSounds[data.sound].play();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function copyJoke() {
+            const jokeText = document.getElementById('joke-text').textContent;
+            navigator.clipboard.writeText(jokeText)
+                .then(() => {
+                    // Visual feedback for copy
+                    const copyButton = document.querySelector('.fa-copy');
+                    copyButton.classList.remove('fa-copy');
+                    copyButton.classList.add('fa-check');
+                    setTimeout(() => {
+                        copyButton.classList.remove('fa-check');
+                        copyButton.classList.add('fa-copy');
+                    }, 2000);
+                })
+                .catch(err => console.error('Failed to copy:', err));
+        }
+
+        function shareJoke() {
+            const jokeText = document.getElementById('joke-text').textContent;
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Funny Joke',
+                    text: jokeText,
+                })
+                .catch(err => console.error('Failed to share:', err));
+            } else {
+                copyJoke();
+            }
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const theme = body.getAttribute('data-theme');
+            const themeIcon = document.querySelector('.theme-toggle i');
+            
+            if (theme === 'dark') {
+                body.removeAttribute('data-theme');
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            }
+        }
+    </script>
+</body>
+</html>
