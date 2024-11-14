@@ -1,9 +1,15 @@
 from flask import Flask, render_template, request, jsonify, flash
 from jokes import generate_joke
 import random
+import os
+from dotenv import load_dotenv
 
+# Load environment variables
+load_dotenv()
+
+# Initialize Flask app
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'  # Required for flash messages
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your-secret-key-here')
 
 # List of sound effects for like button
 LAUGH_SOUNDS = [
@@ -45,5 +51,7 @@ def like_joke():
         'sound': sound
     })
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# Vercel requires this
+app.debug = False
+
+# Remove the if __name__ == '__main__' block as it's not needed for Vercel
